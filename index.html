@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Catálogo Oficial Kabra Bruto | Atualização em Tempo Real</title>
+  <!-- SheetJS for 1-click Excel download directly from live data -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: #131b2e;
+      --card-border: #1e293b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --success: #10b981;
+      --purple: #8b5cf6;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+    body { background-color: var(--bg); color: var(--text); padding-bottom: 50px; }
+    
+    header {
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      background: rgba(11, 15, 25, 0.95);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 16px;
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .logo-badge {
+      font-size: 11px;
+      font-weight: 800;
+      letter-spacing: 1px;
+      background: var(--primary);
+      color: white;
+      padding: 3px 8px;
+      border-radius: 6px;
+      text-transform: uppercase;
+    }
+    .title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .live-indicator {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      font-size: 11px;
+      font-weight: 700;
+      color: #34d399;
+      background: rgba(16, 185, 129, 0.15);
+      padding: 3px 8px;
+      border-radius: 20px;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+    }
+    .live-dot {
+      width: 7px;
+      height: 7px;
+      background: #10b981;
+      border-radius: 50%;
+      box-shadow: 0 0 8px #10b981;
+      animation: pulse 1.8s infinite;
+    }
+    @keyframes pulse {
+      0% { opacity: 0.5; transform: scale(0.9); }
+      50% { opacity: 1; transform: scale(1.2); }
+      100% { opacity: 0.5; transform: scale(0.9); }
+    }
+    
+    .actions-bar {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 10px;
+      flex-wrap: wrap;
+    }
+    .btn {
+      padding: 8px 12px;
+      border-radius: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      border: none;
+      transition: background 0.15s;
+    }
+    .btn-excel {
+      background: #166534;
+      color: #dcfce7;
+      border: 1px solid #22c55e;
+    }
+    .btn-csv {
+      background: #1e293b;
+      color: #cbd5e1;
+      border: 1px solid #334155;
+    }
+    .btn-refresh {
+      background: #1e3a8a;
+      color: #bfdbfe;
+      border: 1px solid #3b82f6;
+    }
+    .btn:active { opacity: 0.8; }
+    
+    .search-box {
+      width: 100%;
+      padding: 10px 14px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      border-radius: 8px;
+      color: white;
+      font-size: 14px;
+      outline: none;
+      margin-bottom: 8px;
+    }
+    .search-box:focus { border-color: var(--primary); }
+    
+    .brand-filters {
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      padding-bottom: 4px;
+      scrollbar-width: none;
+    }
+    .brand-filters::-webkit-scrollbar { display: none; }
+    .brand-btn {
+      flex-shrink: 0;
+      padding: 5px 12px;
+      border-radius: 20px;
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: var(--text-muted);
+      font-size: 12px;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    .brand-btn.active {
+      background: var(--primary);
+      border-color: var(--primary);
+      color: white;
+    }
+    
+    .stats-info {
+      font-size: 12px;
+      color: var(--text-muted);
+      margin: 12px 16px 4px;
+      display: flex;
+      justify-content: space-between;
+    }
+    .stats-info b { color: var(--text); }
+    
+    /* Cards Container */
+    .catalog-container {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 8px 12px;
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 14px;
+    }
+    
+    .item-card {
+      background: var(--card-bg);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    .card-top {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.02);
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .sg-badge {
+      font-size: 11px;
+      font-weight: 800;
+      background: #1e3a8a;
+      color: #bfdbfe;
+      padding: 2px 7px;
+      border-radius: 4px;
+    }
+    .status-badge {
+      font-size: 10px;
+      font-weight: 700;
+      padding: 2px 6px;
+      border-radius: 4px;
+      background: rgba(16, 185, 129, 0.2);
+      color: #34d399;
+    }
+    .status-badge.inativo {
+      background: rgba(239, 68, 68, 0.2);
+      color: #f87171;
+    }
+    
+    .card-img-box {
+      width: 100%;
+      aspect-ratio: 1;
+      background: #000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      cursor: pointer;
+    }
+    .card-img-box img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      transition: transform 0.2s;
+    }
+    .card-img-box img:active { transform: scale(0.97); }
+    
+    .card-body {
+      padding: 12px;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      flex: 1;
+    }
+    .card-title {
+      font-size: 14px;
+      font-weight: 700;
+      color: #fff;
+      line-height: 1.3;
+    }
+    .card-sub {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+    
+    .meta-tag {
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 6px;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      line-height: 1.2;
+    }
+    .tag-cor-ia {
+      background: rgba(139, 92, 246, 0.15);
+      border: 1px solid rgba(139, 92, 246, 0.4);
+      color: #c4b5fd;
+    }
+    .tag-cor-com {
+      background: rgba(148, 163, 184, 0.12);
+      border: 1px solid rgba(148, 163, 184, 0.3);
+      color: #cbd5e1;
+    }
+    
+    .card-footer {
+      padding: 10px 12px;
+      background: rgba(255,255,255,0.01);
+      border-top: 1px solid var(--card-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .link-loja {
+      font-size: 12px;
+      color: #60a5fa;
+      text-decoration: none;
+      font-weight: 700;
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .link-loja:hover { text-decoration: underline; }
+    
+    /* Lightbox */
+    .lightbox {
+      display: none;
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      background: rgba(0,0,0,0.92);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .lightbox.active { display: flex; }
+    .lightbox img {
+      max-width: 100%;
+      max-height: 90vh;
+      border-radius: 8px;
+      object-fit: contain;
+    }
+    
+    .loading-state {
+      text-align: center;
+      padding: 40px;
+      font-size: 14px;
+      color: var(--text-muted);
+      grid-column: 1 / -1;
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="header-top">
+      <div style="display:flex; align-items:center; gap:8px;">
+        <span class="logo-badge">KABRA BRUTO</span>
+        <span class="title">Catálogo Oficial</span>
+      </div>
+      <div class="live-indicator">
+        <span class="live-dot"></span>
+        <span>Ao Vivo (Supabase)</span>
+      </div>
+    </div>
+    
+    <div class="actions-bar">
+      <button class="btn btn-excel" onclick="downloadExcel()">📥 Baixar Excel (.xlsx)</button>
+      <button class="btn btn-csv" onclick="downloadCSV()">📄 Baixar CSV</button>
+      <button class="btn btn-refresh" onclick="fetchLiveCatalog()">🔄 Atualizar Dados</button>
+    </div>
+    
+    <input type="text" class="search-box" id="searchBox" placeholder="🔍 Buscar modelo, subgrupo (ex: SG0059) ou cor visual..." oninput="filterData()">
+    
+    <div class="brand-filters">
+      <button class="brand-btn active" data-brand="all" onclick="setBrand('all')">Todos</button>
+      <button class="brand-btn" data-brand="adizero" onclick="setBrand('adizero')">Adizero</button>
+      <button class="brand-btn" data-brand="samba" onclick="setBrand('samba')">Samba</button>
+      <button class="brand-btn" data-brand="nike" onclick="setBrand('nike')">Nike (Dunk/AF1/Vomero)</button>
+      <button class="brand-btn" data-brand="nb" onclick="setBrand('nb')">New Balance</button>
+      <button class="brand-btn" data-brand="on" onclick="setBrand('on')">On Cloud</button>
+      <button class="brand-btn" data-brand="osklen" onclick="setBrand('osklen')">Osklen</button>
+      <button class="brand-btn" data-brand="rsv" onclick="setBrand('rsv')">Reserva</button>
+      <button class="brand-btn" data-brand="hero" onclick="setBrand('hero')">Hero</button>
+      <button class="brand-btn" data-brand="olympikus" onclick="setBrand('olympikus')">Olympikus</button>
+      <button class="brand-btn" data-brand="vans" onclick="setBrand('vans')">Vans</button>
+    </div>
+  </header>
+
+  <div class="stats-info">
+    <div>Exibindo: <b id="statCount">0</b> modelos</div>
+    <div id="statStatus">Carregando catálogo direto do banco...</div>
+  </div>
+
+  <main class="catalog-container" id="cardsContainer">
+    <div class="loading-state">⏳ Conectando ao Supabase e carregando os 279 subgrupos ao vivo...</div>
+  </main>
+
+  <div class="lightbox" id="lightbox" onclick="closeLightbox()">
+    <img id="lightboxImg" src="">
+  </div>
+
+  <script>
+    const SUPABASE_URL = "https://yjvihgwfcldvubmofpuq.supabase.co/rest/v1/rpc/listar_catalogo_publico";
+    const SUPABASE_ANON = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlqdmloZ3dmY2xkdnVibW9mcHVxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3ODIxNjE1MzYsImV4cCI6MjA5NzczNzUzNn0.5yIjojA1L_Ele6lWUuznkTzqYC4nmU27i_tn0tsinOo";
+
+    let catalogData = [];
+    let currentBrand = 'all';
+    let searchQuery = '';
+
+    async function fetchLiveCatalog() {
+      document.getElementById('statStatus').innerText = 'Atualizando direto do Supabase...';
+      try {
+        const response = await fetch(SUPABASE_URL, {
+          method: 'POST',
+          headers: {
+            'apikey': SUPABASE_ANON,
+            'Authorization': 'Bearer ' + SUPABASE_ANON,
+            'Content-Type': 'application/json'
+          }
+        });
+        catalogData = await response.json();
+        document.getElementById('statStatus').innerText = `Sincronizado: ${new Date().toLocaleTimeString('pt-BR')}`;
+        filterData();
+      } catch (err) {
+        console.error('Erro ao buscar dados:', err);
+        document.getElementById('statStatus').innerText = 'Erro ao conectar. Tentando cache...';
+      }
+    }
+
+    function filterData() {
+      searchQuery = document.getElementById('searchBox').value.trim().toLowerCase();
+      const container = document.getElementById('cardsContainer');
+      container.innerHTML = '';
+
+      let filtered = catalogData.filter(item => {
+        // Brand filter
+        if (currentBrand !== 'all') {
+          const fullText = (item.nome_oficial + ' ' + (item.nome_modelo || '')).toLowerCase();
+          if (currentBrand === 'adizero' && !fullText.includes('adizero')) return false;
+          if (currentBrand === 'samba' && !fullText.includes('samba')) return false;
+          if (currentBrand === 'nike' && !fullText.includes('nike') && !fullText.includes('dunk') && !fullText.includes('air force') && !fullText.includes('vomero') && !fullText.includes('pegasus') && !fullText.includes('invincible')) return false;
+          if (currentBrand === 'nb' && !fullText.includes('nb') && !fullText.includes('new balance')) return false;
+          if (currentBrand === 'on' && !fullText.includes('on cloud') && !fullText.includes('cloud')) return false;
+          if (currentBrand === 'osklen' && !fullText.includes('osklen')) return false;
+          if (currentBrand === 'rsv' && !fullText.includes('rsv') && !fullText.includes('reserva') && !fullText.includes('yankee')) return false;
+          if (currentBrand === 'hero' && !fullText.includes('hero')) return false;
+          if (currentBrand === 'olympikus' && !fullText.includes('olympikus') && !fullText.includes('corre')) return false;
+          if (currentBrand === 'vans' && !fullText.includes('vans') && !fullText.includes('knu')) return false;
+        }
+
+        // Search Query
+        if (searchQuery) {
+          const matchCode = item.codigo.toLowerCase().includes(searchQuery);
+          const matchTitle = (item.nome_oficial || '').toLowerCase().includes(searchQuery);
+          const matchModel = (item.nome_modelo || '').toLowerCase().includes(searchQuery);
+          const matchCorIA = (item.cor_ia || '').toLowerCase().includes(searchQuery);
+          const matchCorCom = (item.cor_comercial || '').toLowerCase().includes(searchQuery);
+          if (!matchCode && !matchTitle && !matchModel && !matchCorIA && !matchCorCom) return false;
+        }
+
+        return true;
+      });
+
+      document.getElementById('statCount').innerText = filtered.length;
+
+      if (filtered.length === 0) {
+        container.innerHTML = `<div class="loading-state">Nenhum modelo encontrado para o filtro aplicado.</div>`;
+        return;
+      }
+
+      filtered.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'item-card';
+
+        const isAtivo = item.ativo;
+        const statusText = isAtivo ? 'Ativo' : 'Desativado';
+        const statusClass = isAtivo ? 'status-badge' : 'status-badge inativo';
+
+        card.innerHTML = `
+          <div class="card-top">
+            <span class="sg-badge">${item.codigo}</span>
+            <span class="${statusClass}">${statusText}</span>
+          </div>
+
+          <div class="card-img-box" onclick="openLightbox('${item.foto_url || ''}')">
+            ${item.foto_url ? `<img src="${item.foto_url}" loading="lazy" alt="${item.nome_oficial}">` : `<div style="color:#64748b; font-size:11px;">Sem foto</div>`}
+          </div>
+
+          <div class="card-body">
+            <div class="card-title">${item.nome_oficial}</div>
+            <div class="card-sub">Modelo: <b>${item.nome_modelo || '-'}</b></div>
+            
+            <div style="display:flex; flex-direction:column; gap:4px; margin-top:4px;">
+              <span class="meta-tag tag-cor-ia">🤖 Cor IA: <b>${item.cor_ia || '-'}</b></span>
+              <span class="meta-tag tag-cor-com">🏷️ Cor Loja: <b>${item.cor_comercial || '-'}</b></span>
+            </div>
+          </div>
+
+          <div class="card-footer">
+            <span style="font-size:12px; font-weight:700; color:#34d399;">
+              ${item.preco ? 'R$ ' + Number(item.preco).toFixed(2).replace('.', ',') : ''}
+            </span>
+            ${item.url_produto ? `<a href="${item.url_produto}" target="_blank" class="link-loja">Ver na Loja ↗</a>` : `<span style="font-size:11px; color:#64748b;">Sem link loja</span>`}
+          </div>
+        `;
+
+        container.appendChild(card);
+      });
+    }
+
+    function setBrand(brand) {
+      currentBrand = brand;
+      document.querySelectorAll('.brand-btn').forEach(b => {
+        b.classList.toggle('active', b.getAttribute('data-brand') === brand);
+      });
+      filterData();
+    }
+
+    function openLightbox(src) {
+      if (!src) return;
+      document.getElementById('lightboxImg').src = src;
+      document.getElementById('lightbox').classList.add('active');
+    }
+
+    function closeLightbox() {
+      document.getElementById('lightbox').classList.remove('active');
+    }
+
+    // 1-Click Excel Download directly from live loaded catalog
+    function downloadExcel() {
+      if (!catalogData || catalogData.length === 0) {
+        alert('Dados ainda estão sendo carregados!');
+        return;
+      }
+      const exportRows = catalogData.map(item => ({
+        "Subgrupo": item.codigo,
+        "Nome Modelo": item.nome_modelo || '',
+        "Nome Oficial": item.nome_oficial,
+        "Cor Loja": item.cor_comercial || '',
+        "Cor Visual IA": item.cor_ia || '',
+        "Preço": item.preco ? Number(item.preco) : '',
+        "Status": item.ativo ? 'Ativo' : 'Desativado',
+        "Foto Oficial": item.foto_url || '',
+        "Link Loja Nuvemshop": item.url_produto || '',
+        "Observação": item.observacao || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportRows);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Catálogo");
+      XLSX.writeFile(wb, `Catalogo_Kabra_Bruto_${new Date().toISOString().slice(0,10)}.xlsx`);
+    }
+
+    function downloadCSV() {
+      if (!catalogData || catalogData.length === 0) {
+        alert('Dados ainda estão sendo carregados!');
+        return;
+      }
+      let csvContent = "data:text/csv;charset=utf-8,﻿";
+      csvContent += "Subgrupo;Nome Modelo;Nome Oficial;Cor Loja;Cor Visual IA;Preço;Status;Foto Oficial;Link Loja;Observação\n";
+
+      catalogData.forEach(item => {
+        const row = [
+          item.codigo,
+          item.nome_modelo || '',
+          (item.nome_oficial || '').replace(/;/g, ','),
+          item.cor_comercial || '',
+          item.cor_ia || '',
+          item.preco || '',
+          item.ativo ? 'Ativo' : 'Desativado',
+          item.foto_url || '',
+          item.url_produto || '',
+          (item.observacao || '').replace(/;/g, ',')
+        ].join(";");
+        csvContent += row + "\n";
+      });
+
+      const encodedUri = encodeURI(csvContent);
+      const link = document.createElement("a");
+      link.setAttribute("href", encodedUri);
+      link.setAttribute("download", `Catalogo_Kabra_Bruto_${new Date().toISOString().slice(0,10)}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    }
+
+    // Auto-fetch on page load
+    fetchLiveCatalog();
+  </script>
+</body>
+</html>
